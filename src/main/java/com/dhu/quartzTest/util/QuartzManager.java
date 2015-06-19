@@ -12,13 +12,15 @@ package com.dhu.quartzTest.util;
  * @version V2.0 
  */
 
+import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerFactory;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import org.quartz.impl.StdSchedulerFactory;
-import org.quartz.impl.triggers.CronTriggerImpl;
 
 /**
  * @Description: 定时任务管理类
@@ -36,21 +38,14 @@ public class QuartzManager {
 	private static String TRIGGER_GROUP_NAME = "EXTJWEB_TRIGGERGROUP_NAME";
 
 	/**
-	 * @Description: 添加一个定时任务，使用默认的任务组名，触发器名，触发器组名
+	 * 添加一个定时任务，使用默认的任务组名，触发器名，触发器组名
 	 * 
 	 * @param jobName
 	 *            任务名
 	 * @param cls
-	 *            任务
+	 *            任务，需要继承job
 	 * @param time
-	 *            时间设置，参考quartz说明文档
-	 * 
-	 * @Title: QuartzManager.java
-	 * @Copyright: Copyright (c) 2014
-	 * 
-	 * @author Comsys-LZP
-	 * @date 2014-6-26 下午03:47:44
-	 * @version V2.0
+	 *            cron表达式
 	 */
 	@SuppressWarnings("unchecked")
 	public static void addJob(String jobName, Class cls, String time) {
@@ -59,9 +54,13 @@ public class QuartzManager {
 			Scheduler sched = gSchedulerFactory.getScheduler();
 			JobDetail jobDetail = JobBuilder.newJob(cls)
 					.withIdentity(jobName, JOB_GROUP_NAME).build(); // 任务名，任务组，任务执行类
+
+			CronScheduleBuilder scheduleBuilder = CronScheduleBuilder
+					.cronSchedule(time);// 触发器时间设定
 			// 触发器
-			Trigger trigger = TriggerBuilder.newTrigger();  //new CronTriggerImpl(jobName, TRIGGER_GROUP_NAME);// 触发器名,触发器组
-			trigger.setCronExpression(time);// 触发器时间设定
+			Trigger trigger = TriggerBuilder.newTrigger()
+					.withIdentity(jobName, TRIGGER_GROUP_NAME)
+					.withSchedule(scheduleBuilder).build();// 触发器名,触发器组
 			sched.scheduleJob(jobDetail, trigger);
 			// 启动
 			if (!sched.isShutdown()) {
@@ -84,16 +83,11 @@ public class QuartzManager {
 	 * @param triggerGroupName
 	 *            触发器组名
 	 * @param jobClass
-	 *            任务
+	 *            任务类名，需要继承job
+	 * 
 	 * @param time
-	 *            时间设置，参考quartz说明文档
+	 *            cron表达式
 	 * 
-	 * @Title: QuartzManager.java
-	 * @Copyright: Copyright (c) 2014
-	 * 
-	 * @author Comsys-LZP
-	 * @date 2014-6-26 下午03:48:15
-	 * @version V2.0
 	 */
 	@SuppressWarnings("unchecked")
 	public static void addJob(String jobName, String jobGroupName,
@@ -101,10 +95,16 @@ public class QuartzManager {
 			String time) {
 		try {
 			Scheduler sched = gSchedulerFactory.getScheduler();
-			JobDetail jobDetail = new JobDetail(jobName, jobGroupName, jobClass);// 任务名，任务组，任务执行类
+			JobDetail jobDetail = JobBuilder.newJob(jobClass)
+					.withIdentity(jobName, jobGroupName).build();// 任务名，任务组，任务执行类
+
+			CronScheduleBuilder scheduleBuilder = CronScheduleBuilder
+					.cronSchedule(time);// 触发器时间设定
+
 			// 触发器
-			CronTrigger trigger = new CronTrigger(triggerName, triggerGroupName);// 触发器名,触发器组
-			trigger.setCronExpression(time);// 触发器时间设定
+			Trigger trigger = TriggerBuilder.newTrigger()
+					.withIdentity(triggerName, triggerGroupName)
+					.withSchedule(scheduleBuilder).build();// 触发器名,触发器组
 			sched.scheduleJob(jobDetail, trigger);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
