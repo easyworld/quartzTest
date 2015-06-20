@@ -16,21 +16,21 @@ import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerFactory;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
+import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
 
 /**
  * @Description: 定时任务管理类
  * 
  * @ClassName: QuartzManager
- * @Copyright: Copyright (c) 2014
+ * @Copyright: Copyright (c) 2015
  * 
- * @author Comsys-LZP
- * @date 2014-6-26 下午03:15:52
- * @version V2.0
+ * @author modified by Comsys-LZP's code.
  */
 public class QuartzManager {
 	private static SchedulerFactory gSchedulerFactory = new StdSchedulerFactory();
@@ -116,66 +116,24 @@ public class QuartzManager {
 	 * 
 	 * @param jobName
 	 * @param time
-	 * 
-	 * @Title: QuartzManager.java
-	 * @Copyright: Copyright (c) 2014
-	 * 
-	 * @author Comsys-LZP
-	 * @date 2014-6-26 下午03:49:21
-	 * @version V2.0
 	 */
 	@SuppressWarnings("unchecked")
 	public static void modifyJobTime(String jobName, String time) {
 		try {
 			Scheduler sched = gSchedulerFactory.getScheduler();
-			CronTrigger trigger = (CronTrigger) sched.getTrigger(jobName,
-					TRIGGER_GROUP_NAME);
+			CronTrigger trigger = (CronTrigger) sched
+					.getTrigger(new TriggerKey(jobName, TRIGGER_GROUP_NAME));
+
 			if (trigger == null) {
 				return;
 			}
 			String oldTime = trigger.getCronExpression();
 			if (!oldTime.equalsIgnoreCase(time)) {
-				JobDetail jobDetail = sched.getJobDetail(jobName,
-						JOB_GROUP_NAME);
+				JobDetail jobDetail = sched.getJobDetail(new JobKey(jobName,
+						JOB_GROUP_NAME));
 				Class objJobClass = jobDetail.getJobClass();
 				removeJob(jobName);
 				addJob(jobName, objJobClass, time);
-			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * @Description: 修改一个任务的触发时间
-	 * 
-	 * @param triggerName
-	 * @param triggerGroupName
-	 * @param time
-	 * 
-	 * @Title: QuartzManager.java
-	 * @Copyright: Copyright (c) 2014
-	 * 
-	 * @author Comsys-LZP
-	 * @date 2014-6-26 下午03:49:37
-	 * @version V2.0
-	 */
-	public static void modifyJobTime(String triggerName,
-			String triggerGroupName, String time) {
-		try {
-			Scheduler sched = gSchedulerFactory.getScheduler();
-			CronTrigger trigger = (CronTrigger) sched.getTrigger(triggerName,
-					triggerGroupName);
-			if (trigger == null) {
-				return;
-			}
-			String oldTime = trigger.getCronExpression();
-			if (!oldTime.equalsIgnoreCase(time)) {
-				CronTrigger ct = (CronTrigger) trigger;
-				// 修改时间
-				ct.setCronExpression(time);
-				// 重启触发器
-				sched.resumeTrigger(triggerName, triggerGroupName);
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -187,19 +145,13 @@ public class QuartzManager {
 	 * 
 	 * @param jobName
 	 * 
-	 * @Title: QuartzManager.java
-	 * @Copyright: Copyright (c) 2014
-	 * 
-	 * @author Comsys-LZP
-	 * @date 2014-6-26 下午03:49:51
-	 * @version V2.0
 	 */
 	public static void removeJob(String jobName) {
 		try {
 			Scheduler sched = gSchedulerFactory.getScheduler();
-			sched.pauseTrigger(jobName, TRIGGER_GROUP_NAME);// 停止触发器
-			sched.unscheduleJob(jobName, TRIGGER_GROUP_NAME);// 移除触发器
-			sched.deleteJob(jobName, JOB_GROUP_NAME);// 删除任务
+			sched.pauseTrigger(new TriggerKey(jobName, TRIGGER_GROUP_NAME));// 停止触发器
+			sched.unscheduleJob(new TriggerKey(jobName, TRIGGER_GROUP_NAME));// 移除触发器
+			sched.deleteJob(new JobKey(jobName, JOB_GROUP_NAME));// 删除任务
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -213,20 +165,14 @@ public class QuartzManager {
 	 * @param triggerName
 	 * @param triggerGroupName
 	 * 
-	 * @Title: QuartzManager.java
-	 * @Copyright: Copyright (c) 2014
-	 * 
-	 * @author Comsys-LZP
-	 * @date 2014-6-26 下午03:50:01
-	 * @version V2.0
 	 */
 	public static void removeJob(String jobName, String jobGroupName,
 			String triggerName, String triggerGroupName) {
 		try {
 			Scheduler sched = gSchedulerFactory.getScheduler();
-			sched.pauseTrigger(triggerName, triggerGroupName);// 停止触发器
-			sched.unscheduleJob(triggerName, triggerGroupName);// 移除触发器
-			sched.deleteJob(jobName, jobGroupName);// 删除任务
+			sched.pauseTrigger(new TriggerKey(triggerName, triggerGroupName));// 停止触发器
+			sched.unscheduleJob(new TriggerKey(triggerName, triggerGroupName));// 移除触发器
+			sched.deleteJob(new JobKey(jobName, jobGroupName));// 删除任务
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -236,12 +182,6 @@ public class QuartzManager {
 	 * @Description:启动所有定时任务
 	 * 
 	 * 
-	 * @Title: QuartzManager.java
-	 * @Copyright: Copyright (c) 2014
-	 * 
-	 * @author Comsys-LZP
-	 * @date 2014-6-26 下午03:50:18
-	 * @version V2.0
 	 */
 	public static void startJobs() {
 		try {
@@ -255,13 +195,6 @@ public class QuartzManager {
 	/**
 	 * @Description:关闭所有定时任务
 	 * 
-	 * 
-	 * @Title: QuartzManager.java
-	 * @Copyright: Copyright (c) 2014
-	 * 
-	 * @author Comsys-LZP
-	 * @date 2014-6-26 下午03:50:26
-	 * @version V2.0
 	 */
 	public static void shutdownJobs() {
 		try {
