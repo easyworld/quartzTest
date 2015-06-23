@@ -17,9 +17,16 @@
 				alert(data);
 			});
 		});
+		$("#changetime").click(function() {
+			var param = $("#inputbox2").val();
+			$.post("changetime.php",{param:param}, function(data) {
+				alert(data);
+			});
+		});
 	});
 </script>
 <link rel="stylesheet" href="static/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="static/dist/css/bootstrap-theme.min.css" />
 <style type="text/css">
 <!--
 .chinese {
@@ -34,11 +41,68 @@
 		<div class="jumbotron">
 			<h1 class="chinese">Hello</h1>
 			<p class="chinese">这是一个quartz的测试</p>
-			<div class="form-group">
-				<label for="input">input</label> 
-				<input type="text" class="form-control" id="inputbox1"	placeholder="please input" />
+			<p>
+				<button id="addTask" class="btn btn-primary chinese">添加任务</button>
+			</p>
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<span class="panel-title chinese" >计划中任务</span>
+				</div>
+				<div class="panel-body">
+				    <table class="table table-bordered">
+				    	<thead>
+				    		<tr>
+				    			<th>任务名称</th>
+				    			<th>任务组</th>
+				    			<th>cron表达式</th>
+				    			<th>状态</th>
+				    			<th>备注</th>
+				    			<th>操作</th>
+				    		</tr>
+				    	</thead>
+				    	<tbody>
+				    		<tr>
+				    			<td>假的名称1</td>
+				    			<td>假的任务组2</td>
+				    			<td>假的表达式</td>
+				    			<td>假的名称1</td>
+				    			<td>假的任务组2</td>
+				    			<td>
+				    				<div class="btn-group" role="group" aria-label="buttonGroup">
+										<button id="pause" type="button" class="btn btn-default chinese">暂停</button>
+										<button id="delete" type="button" class="btn btn-default chinese">删除</button>
+										<button id="modify" type="button" class="btn btn-default chinese">修改表达式</button>
+										<button id="run" type="button" class="btn btn-default chinese">立即运行一次</button>
+									</div>
+				    			</td>
+				    		</tr>
+				    	</tbody>
+				    	
+					</table>
+				</div>
 			</div>
-			<a id="learnmore" class="btn btn-primary btn-lg chinese" href="#" role="button">开始！</a>
+			
+			<div class="panel panel-primary">
+				<div class="panel-heading">
+					<h3 class="panel-title chinese">运行中任务</h3>
+				</div>
+				<div class="panel-body">
+				    <table class="table table-bordered">
+				    	<thead>
+				    		<tr>
+				    			<th>任务名称</th>
+				    			<th>任务组</th>
+				    			<th>cron表达式</th>
+				    			<th>状态</th>
+				    			<th>备注</th>
+				    		</tr>
+				    	</thead>
+				    	<tbody>
+				    		
+				    	</tbody>
+					</table>
+				</div>
+			</div>
 		</div>
 	</div>
 </body>
