@@ -14,7 +14,9 @@ package com.dhu.quartzTest.util;
 
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
+import org.quartz.Job;
 import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
@@ -33,9 +35,11 @@ import org.quartz.impl.StdSchedulerFactory;
  * @author modified by Comsys-LZP's code.
  */
 public class QuartzManager {
-	private static SchedulerFactory gSchedulerFactory = new StdSchedulerFactory();
-	private static String JOB_GROUP_NAME = "EXTJWEB_JOBGROUP_NAME";
-	private static String TRIGGER_GROUP_NAME = "EXTJWEB_TRIGGERGROUP_NAME";
+
+	private static SchedulerFactory schedulerFactory = new StdSchedulerFactory();
+
+	private static String JOB_GROUP_NAME = "WEB_JOBGROUP_NAME";
+	private static String TRIGGER_GROUP_NAME = "WEB_TRIGGERGROUP_NAME";
 
 	/**
 	 * 添加一个定时任务，使用默认的任务组名，触发器名，触发器组名
@@ -44,15 +48,17 @@ public class QuartzManager {
 	 *            任务名
 	 * @param cls
 	 *            任务，需要继承job
+	 * @param map
+	 *            任务数据map
 	 * @param time
 	 *            cron表达式
 	 */
-	@SuppressWarnings("unchecked")
-	public static void addJob(String jobName, Class cls, String time) {
+	public static void addJob(String jobName, Class<? extends Job> cls,
+			JobDataMap map, String time) {
 		try {
 
-			Scheduler sched = gSchedulerFactory.getScheduler();
-			JobDetail jobDetail = JobBuilder.newJob(cls)
+			Scheduler sched = schedulerFactory.getScheduler();
+			JobDetail jobDetail = JobBuilder.newJob(cls).setJobData(map)
 					.withIdentity(jobName, JOB_GROUP_NAME).build(); // 任务名，任务组，任务执行类
 
 			CronScheduleBuilder scheduleBuilder = CronScheduleBuilder
@@ -84,18 +90,18 @@ public class QuartzManager {
 	 *            触发器组名
 	 * @param jobClass
 	 *            任务类名，需要继承job
-	 * 
+	 * @param map
+	 *            任务数据map
 	 * @param time
 	 *            cron表达式
 	 * 
 	 */
-	@SuppressWarnings("unchecked")
 	public static void addJob(String jobName, String jobGroupName,
-			String triggerName, String triggerGroupName, Class jobClass,
-			String time) {
+			String triggerName, String triggerGroupName,
+			Class<? extends Job> jobClass, JobDataMap map, String time) {
 		try {
-			Scheduler sched = gSchedulerFactory.getScheduler();
-			JobDetail jobDetail = JobBuilder.newJob(jobClass)
+			Scheduler sched = schedulerFactory.getScheduler();
+			JobDetail jobDetail = JobBuilder.newJob(jobClass).setJobData(map)
 					.withIdentity(jobName, jobGroupName).build();// 任务名，任务组，任务执行类
 
 			CronScheduleBuilder scheduleBuilder = CronScheduleBuilder
@@ -117,10 +123,9 @@ public class QuartzManager {
 	 * @param jobName
 	 * @param time
 	 */
-	@SuppressWarnings("unchecked")
 	public static void modifyJobTime(String jobName, String time) {
 		try {
-			Scheduler sched = gSchedulerFactory.getScheduler();
+			Scheduler sched = schedulerFactory.getScheduler();
 			CronTrigger trigger = (CronTrigger) sched
 					.getTrigger(new TriggerKey(jobName, TRIGGER_GROUP_NAME));
 
@@ -131,10 +136,69 @@ public class QuartzManager {
 			if (!oldTime.equalsIgnoreCase(time)) {
 				JobDetail jobDetail = sched.getJobDetail(new JobKey(jobName,
 						JOB_GROUP_NAME));
-				Class objJobClass = jobDetail.getJobClass();
+				Class<? extends Job> objJobClass = jobDetail.getJobClass();
+				JobDataMap map = jobDetail.getJobDataMap();
 				removeJob(jobName);
-				addJob(jobName, objJobClass, time);
+				addJob(jobName, objJobClass, map, time);
 			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * 暂停一个任务
+	 * 
+	 * @param jobName
+	 */
+	public static void pauseJob(String jobName) {
+		try {
+			Scheduler sched = schedulerFactory.getScheduler();
+			JobKey jobKey = JobKey.jobKey(jobName, JOB_GROUP_NAME);
+			sched.pauseJob(jobKey);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * 暂停一个任务
+	 * 
+	 * @param jobName
+	 * @param jobGroup
+	 */
+	public static void pauseJob(String jobName, String jobGroup) {
+		try {
+			Scheduler sched = schedulerFactory.getScheduler();
+			JobKey jobKey = JobKey.jobKey(jobName, jobGroup);
+			sched.pauseJob(jobKey);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	/**
+	 * 恢复一个任务
+	 * @param jobName
+	 */
+	public static void resumeJob(String jobName) {
+		try {
+			Scheduler sched = schedulerFactory.getScheduler();
+			JobKey jobKey = JobKey.jobKey(jobName, JOB_GROUP_NAME);
+			sched.resumeJob(jobKey);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	/**
+	 * 恢复一个任务
+	 * @param jobName
+	 * @param jobGroup
+	 */
+	public static void resumeJob(String jobName, String jobGroup) {
+		try {
+			Scheduler sched = schedulerFactory.getScheduler();
+			JobKey jobKey = JobKey.jobKey(jobName, jobGroup);
+			sched.resumeJob(jobKey);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -148,7 +212,7 @@ public class QuartzManager {
 	 */
 	public static void removeJob(String jobName) {
 		try {
-			Scheduler sched = gSchedulerFactory.getScheduler();
+			Scheduler sched = schedulerFactory.getScheduler();
 			sched.pauseTrigger(new TriggerKey(jobName, TRIGGER_GROUP_NAME));// 停止触发器
 			sched.unscheduleJob(new TriggerKey(jobName, TRIGGER_GROUP_NAME));// 移除触发器
 			sched.deleteJob(new JobKey(jobName, JOB_GROUP_NAME));// 删除任务
@@ -169,7 +233,7 @@ public class QuartzManager {
 	public static void removeJob(String jobName, String jobGroupName,
 			String triggerName, String triggerGroupName) {
 		try {
-			Scheduler sched = gSchedulerFactory.getScheduler();
+			Scheduler sched = schedulerFactory.getScheduler();
 			sched.pauseTrigger(new TriggerKey(triggerName, triggerGroupName));// 停止触发器
 			sched.unscheduleJob(new TriggerKey(triggerName, triggerGroupName));// 移除触发器
 			sched.deleteJob(new JobKey(jobName, jobGroupName));// 删除任务
@@ -185,7 +249,7 @@ public class QuartzManager {
 	 */
 	public static void startJobs() {
 		try {
-			Scheduler sched = gSchedulerFactory.getScheduler();
+			Scheduler sched = schedulerFactory.getScheduler();
 			sched.start();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -198,7 +262,7 @@ public class QuartzManager {
 	 */
 	public static void shutdownJobs() {
 		try {
-			Scheduler sched = gSchedulerFactory.getScheduler();
+			Scheduler sched = schedulerFactory.getScheduler();
 			if (!sched.isShutdown()) {
 				sched.shutdown();
 			}
