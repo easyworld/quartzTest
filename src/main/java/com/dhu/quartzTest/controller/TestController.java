@@ -5,6 +5,7 @@ import java.util.List;
 import net.sf.json.JSONArray;
 
 import org.quartz.JobDataMap;
+import org.quartz.SchedulerException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -30,8 +31,12 @@ public class TestController {
 	@RequestMapping("/index")
 	public ModelAndView index() {
 		ModelAndView mav = new ModelAndView("index");
-		mav.addObject("plist", QuartzManager.getPlannedJobList());
-		mav.addObject("rlist", QuartzManager.getRunningJobList());
+		try {
+			mav.addObject("plist", QuartzManager.getPlannedJobList());
+			mav.addObject("rlist", QuartzManager.getRunningJobList());
+		} catch (SchedulerException e) {
+			// do nothing
+		}
 		return mav;
 	}
 
@@ -42,9 +47,13 @@ public class TestController {
 	 */
 	@RequestMapping(value = "getPlannedJobList", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String getPlannedJobList() {
-		List<?> list = QuartzManager.getPlannedJobList();
-		String json = JSONArray.fromObject(list).toString();
-		return json;
+		try {
+			List<?> list = QuartzManager.getPlannedJobList();
+			String json = JSONArray.fromObject(list).toString();
+			return json;
+		} catch (SchedulerException e) {
+			return "";
+		}
 	}
 
 	/**
@@ -55,9 +64,13 @@ public class TestController {
 	 */
 	@RequestMapping(value = "getRunningJobList", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String getRunningJobList(String param) {
-		List<?> list = QuartzManager.getRunningJobList();
-		String json = JSONArray.fromObject(list).toString();
-		return json;
+		try {
+			List<?> list = QuartzManager.getRunningJobList();
+			String json = JSONArray.fromObject(list).toString();
+			return json;
+		} catch (SchedulerException e) {
+			return "";
+		}
 	}
 
 	@RequestMapping(value = "addJob", produces = "text/html;charset=UTF-8")
@@ -85,6 +98,45 @@ public class TestController {
 				QuartzManager.startJobs();
 				return Constant.START;
 			}
+		} catch (Exception e) {
+			return e.getMessage();
+		}
+	}
+
+	@RequestMapping(value = "isStart", produces = "text/html;charset=UTF-8")
+	public @ResponseBody String isStart() {
+		try {
+			return QuartzManager.isStarted() ? "true" : "false";
+		} catch (Exception e) {
+			return e.getMessage();
+		}
+	}
+
+	@RequestMapping(value = "pauseJob", produces = "text/html;charset=UTF-8")
+	public @ResponseBody String pauseJob(String name, String group) {
+		try {
+			QuartzManager.pauseJob(name, group);
+			return Constant.SUCCESS;
+		} catch (Exception e) {
+			return e.getMessage();
+		}
+	}
+
+	@RequestMapping(value = "resumeJob", produces = "text/html;charset=UTF-8")
+	public @ResponseBody String resumeJob(String name, String group) {
+		try {
+			QuartzManager.resumeJob(name, group);
+			return Constant.SUCCESS;
+		} catch (Exception e) {
+			return e.getMessage();
+		}
+	}
+
+	@RequestMapping(value = "deleteJob", produces = "text/html;charset=UTF-8")
+	public @ResponseBody String deleteJob(String name, String group) {
+		try {
+			QuartzManager.removeJob(name, group);
+			return Constant.SUCCESS;
 		} catch (Exception e) {
 			return e.getMessage();
 		}
