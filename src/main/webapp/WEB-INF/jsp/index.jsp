@@ -2,6 +2,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -11,16 +12,29 @@
 <script type="text/javascript" src="static/dist/js/bootstrap.min.js"></script>
 <script type="text/javascript">
 	$(function() {
-		$("#learnmore").click(function() {
-			var param = $("#inputbox1").val();
-			$.post("test.php",{param:param}, function(data) {
+		//添加按钮
+		$("#addTask").click(function(){
+			$(this).addClass("disabled");
+			var button = $(this);
+			var param = $("#addForm").serialize();
+			alert("sss");
+			$.post("addJob.php",param,function(data){
 				alert(data);
+				button.removeClass("disabled");
 			});
 		});
-		$("#changetime").click(function() {
-			var param = $("#inputbox2").val();
-			$.post("changetime.php",{param:param}, function(data) {
-				alert(data);
+		$("#start").click(function(){
+			$(this).addClass("disabled");
+			var button = $(this);
+			$.post("start.php",function(data){
+				if(data=='start'){
+					button.text("全部停止");
+				}else if(data=='shutdown'){
+					button.text("全部开始");
+				}else{
+					alert(data);
+				}
+				button.removeClass("disabled");
 			});
 		});
 	});
@@ -41,44 +55,75 @@
 		<div class="jumbotron">
 			<h1 class="chinese">Hello</h1>
 			<p class="chinese">这是一个quartz的测试</p>
+			<p><button id="start" class="btn btn-primary chinese">全部开始</button></p>
 			<p>
-				<button id="addTask" class="btn btn-primary chinese">添加任务</button>
+				<form id="addForm" class="form-inline">
+					<div class="form-group">
+						<label for="name">任务名称</label>
+						<input type="text" class="form-control" name="name" placeholder="name" />
+					</div>
+					<div class="form-group">
+						<label for="group">任务组</label>
+						<input type="text" class="form-control" name="group" placeholder="group" />
+					</div>
+					<div class="form-group">
+						<label for="time">任务表达式</label>
+						<input type="text" class="form-control" name="time" placeholder="time" />
+					</div>
+					<div class="form-group">
+						<label for="str">任务参数</label>
+						<input type="text" class="form-control" name="str" placeholder="str" />
+					</div>
+					<div class="form-group">
+						<button id="addTask" class="btn btn-primary chinese">添加任务</button>
+					</div>
+				</form>
 			</p>
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<span class="panel-title chinese" >计划中任务</span>
 				</div>
 				<div class="panel-body">
-				    <table class="table table-bordered">
-				    	<thead>
-				    		<tr>
-				    			<th>任务名称</th>
-				    			<th>任务组</th>
-				    			<th>cron表达式</th>
-				    			<th>状态</th>
-				    			<th>备注</th>
-				    			<th>操作</th>
-				    		</tr>
-				    	</thead>
-				    	<tbody>
-				    		<tr>
-				    			<td>假的名称1</td>
-				    			<td>假的任务组2</td>
-				    			<td>假的表达式</td>
-				    			<td>假的名称1</td>
-				    			<td>假的任务组2</td>
-				    			<td>
-				    				<div class="btn-group" role="group" aria-label="buttonGroup">
-										<button id="pause" type="button" class="btn btn-default chinese">暂停</button>
-										<button id="delete" type="button" class="btn btn-default chinese">删除</button>
-										<button id="modify" type="button" class="btn btn-default chinese">修改表达式</button>
-										<button id="run" type="button" class="btn btn-default chinese">立即运行一次</button>
-									</div>
-				    			</td>
-				    		</tr>
-				    	</tbody>
-				    	
-					</table>
+					<div class="table-responsive">
+					    <table class="table table-bordered">
+					    	<thead>
+					    		<tr>
+					    			<th>任务名称</th>
+					    			<th>任务组</th>
+					    			<th>cron表达式</th>
+					    			<th>状态</th>
+					    			<th>备注</th>
+					    			<th>操作</th>
+					    		</tr>
+					    	</thead>
+					    	<tbody>
+					    		<c:choose>
+									<c:when test="${plist!=null and fn:length(plist) > 0}">
+										<c:forEach var="map" items="${plist}">
+											<tr>
+												<td><c:out value="${map.jobName}"/></td>
+												<td><c:out value="${map.jobGroup}"/></td>
+												<td><c:out value="${map.cronExpression}"/></td>
+												<td><c:out value="${map.jobStatus}"/></td>
+												<td><c:out value="${map.desc}"/></td>
+												<td>
+								    				<div class="btn-group" role="group" aria-label="buttonGroup">
+														<button id="pause" type="button" class="btn btn-default chinese">暂停</button>
+														<button id="delete" type="button" class="btn btn-default chinese">删除</button>
+														<button id="modify" type="button" class="btn btn-default chinese">修改表达式</button>
+														<button id="run" type="button" class="btn btn-default chinese">立即运行一次</button>
+													</div>
+								    			</td>
+											</tr>
+										</c:forEach>
+									</c:when>
+									<c:otherwise>
+										<tr><td colspan="6">暂无数据</td></tr>
+									</c:otherwise>
+								</c:choose>
+					    	</tbody>
+						</table>
+					</div>
 				</div>
 			</div>
 			
@@ -98,7 +143,22 @@
 				    		</tr>
 				    	</thead>
 				    	<tbody>
-				    		
+				    		<c:choose>
+								<c:when test="${rlist!=null and fn:length(rlist)>0}">
+						    		<c:forEach var="map" items="${rlist}">
+										<tr>
+											<td><c:out value="${map.jobName}"/></td>
+											<td><c:out value="${map.jobGroup}"/></td>
+											<td><c:out value="${map.cronExpression}"/></td>
+											<td><c:out value="${map.jobStatus}"/></td>
+											<td><c:out value="${map.desc}"/></td>
+										</tr>
+									</c:forEach>
+								</c:when>
+								<c:otherwise>
+									<tr><td colspan="5">暂无数据</td></tr>
+								</c:otherwise>
+							</c:choose>
 				    	</tbody>
 					</table>
 				</div>
