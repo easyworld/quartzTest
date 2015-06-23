@@ -25,6 +25,7 @@ import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
@@ -43,55 +44,23 @@ import com.dhu.quartzTest.domain.ScheduleJob;
  * @author modified by Comsys-LZP's code.
  */
 public class QuartzManager {
-	/*先使用new的方式生成scheduler，后期优化成bean注入,*/
+	/* 先使用new的方式生成scheduler，后期优化成bean注入, */
 	private static SchedulerFactory schedulerFactory = new StdSchedulerFactory();
 
 	// private static String JOB_GROUP_NAME = Constant.JOB_GROUP_NAME;
 	// private static String TRIGGER_GROUP_NAME = Constant.TRIGGER_GROUP_NAME;
 
-	public static List<ScheduleJob> getPlannedJobList() {
-		try {
-			Scheduler scheduler = schedulerFactory.getScheduler();
-			GroupMatcher<JobKey> matcher = GroupMatcher.anyJobGroup();
-			Set<JobKey> jobKeys = scheduler.getJobKeys(matcher);
-			List<ScheduleJob> jobList = new ArrayList<ScheduleJob>();
-			for (JobKey jobKey : jobKeys) {
-				List<? extends Trigger> triggers = scheduler
-						.getTriggersOfJob(jobKey);
-				for (Trigger trigger : triggers) {
-					ScheduleJob job = new ScheduleJob();
-					job.setJobName(jobKey.getName());
-					job.setJobGroup(jobKey.getGroup());
-					job.setDesc("触发器:" + trigger.getKey());
-					Trigger.TriggerState triggerState = scheduler
-							.getTriggerState(trigger.getKey());
-					job.setJobStatus(triggerState.name());
-					if (trigger instanceof CronTrigger) {
-						CronTrigger cronTrigger = (CronTrigger) trigger;
-						String cronExpression = cronTrigger.getCronExpression();
-						job.setCronExpression(cronExpression);
-					}
-					jobList.add(job);
-				}
-			}
-			return jobList;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public static List<ScheduleJob> getRunningJobList() {
-		try {
-			Scheduler scheduler = schedulerFactory.getScheduler();
-			List<JobExecutionContext> executingJobs = scheduler
-					.getCurrentlyExecutingJobs();
-			List<ScheduleJob> jobList = new ArrayList<ScheduleJob>(
-					executingJobs.size());
-			for (JobExecutionContext executingJob : executingJobs) {
+	public static List<ScheduleJob> getPlannedJobList()
+			throws SchedulerException {
+		Scheduler scheduler = schedulerFactory.getScheduler();
+		GroupMatcher<JobKey> matcher = GroupMatcher.anyJobGroup();
+		Set<JobKey> jobKeys = scheduler.getJobKeys(matcher);
+		List<ScheduleJob> jobList = new ArrayList<ScheduleJob>();
+		for (JobKey jobKey : jobKeys) {
+			List<? extends Trigger> triggers = scheduler
+					.getTriggersOfJob(jobKey);
+			for (Trigger trigger : triggers) {
 				ScheduleJob job = new ScheduleJob();
-				JobDetail jobDetail = executingJob.getJobDetail();
-				JobKey jobKey = jobDetail.getKey();
-				Trigger trigger = executingJob.getTrigger();
 				job.setJobName(jobKey.getName());
 				job.setJobGroup(jobKey.getGroup());
 				job.setDesc("触发器:" + trigger.getKey());
@@ -105,10 +74,36 @@ public class QuartzManager {
 				}
 				jobList.add(job);
 			}
-			return jobList;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
+		return jobList;
+	}
+
+	public static List<ScheduleJob> getRunningJobList()
+			throws SchedulerException {
+		Scheduler scheduler = schedulerFactory.getScheduler();
+		List<JobExecutionContext> executingJobs = scheduler
+				.getCurrentlyExecutingJobs();
+		List<ScheduleJob> jobList = new ArrayList<ScheduleJob>(
+				executingJobs.size());
+		for (JobExecutionContext executingJob : executingJobs) {
+			ScheduleJob job = new ScheduleJob();
+			JobDetail jobDetail = executingJob.getJobDetail();
+			JobKey jobKey = jobDetail.getKey();
+			Trigger trigger = executingJob.getTrigger();
+			job.setJobName(jobKey.getName());
+			job.setJobGroup(jobKey.getGroup());
+			job.setDesc("触发器:" + trigger.getKey());
+			Trigger.TriggerState triggerState = scheduler
+					.getTriggerState(trigger.getKey());
+			job.setJobStatus(triggerState.name());
+			if (trigger instanceof CronTrigger) {
+				CronTrigger cronTrigger = (CronTrigger) trigger;
+				String cronExpression = cronTrigger.getCronExpression();
+				job.setCronExpression(cronExpression);
+			}
+			jobList.add(job);
+		}
+		return jobList;
 	}
 
 	/**
@@ -132,23 +127,20 @@ public class QuartzManager {
 	 */
 	public static void addJob(String jobName, String jobGroupName,
 			String triggerName, String triggerGroupName,
-			Class<? extends Job> jobClass, JobDataMap map, String time) {
-		try {
-			Scheduler sched = schedulerFactory.getScheduler();
-			JobDetail jobDetail = JobBuilder.newJob(jobClass).setJobData(map)
-					.withIdentity(jobName, jobGroupName).build();// 任务名，任务组，任务执行类
+			Class<? extends Job> jobClass, JobDataMap map, String time)
+			throws SchedulerException {
+		Scheduler sched = schedulerFactory.getScheduler();
+		JobDetail jobDetail = JobBuilder.newJob(jobClass).setJobData(map)
+				.withIdentity(jobName, jobGroupName).build();// 任务名，任务组，任务执行类
 
-			CronScheduleBuilder scheduleBuilder = CronScheduleBuilder
-					.cronSchedule(time);// 触发器时间设定
+		CronScheduleBuilder scheduleBuilder = CronScheduleBuilder
+				.cronSchedule(time);// 触发器时间设定
 
-			// 触发器
-			Trigger trigger = TriggerBuilder.newTrigger()
-					.withIdentity(triggerName, triggerGroupName)
-					.withSchedule(scheduleBuilder).build();// 触发器名,触发器组
-			sched.scheduleJob(jobDetail, trigger);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+		// 触发器
+		Trigger trigger = TriggerBuilder.newTrigger()
+				.withIdentity(triggerName, triggerGroupName)
+				.withSchedule(scheduleBuilder).build();// 触发器名,触发器组
+		sched.scheduleJob(jobDetail, trigger);
 	}
 
 	/**
@@ -158,31 +150,26 @@ public class QuartzManager {
 	 * @param time
 	 */
 	public static void modifyJobTime(String jobName, String jobGroupName,
-			String time) {
-		try {
-			Scheduler sched = schedulerFactory.getScheduler();
+			String time) throws SchedulerException {
+		Scheduler sched = schedulerFactory.getScheduler();
 
-			TriggerKey triggerKey = TriggerKey
-					.triggerKey(jobName, jobGroupName);
+		TriggerKey triggerKey = TriggerKey.triggerKey(jobName, jobGroupName);
 
-			CronTrigger trigger = (CronTrigger) sched.getTrigger(triggerKey);
+		CronTrigger trigger = (CronTrigger) sched.getTrigger(triggerKey);
 
-			if (trigger == null) {
-				return;
-			}
-			String oldTime = trigger.getCronExpression();
-			if (!oldTime.equalsIgnoreCase(time)) {
-				// 表达式调度构建器
-				CronScheduleBuilder scheduleBuilder = CronScheduleBuilder
-						.cronSchedule(time);
-				// 按新的cronExpression表达式重新构建trigger
-				trigger = trigger.getTriggerBuilder().withIdentity(triggerKey)
-						.withSchedule(scheduleBuilder).build();
-				// 按新的trigger重新设置job执行
-				sched.rescheduleJob(triggerKey, trigger);
-			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+		if (trigger == null) {
+			return;
+		}
+		String oldTime = trigger.getCronExpression();
+		if (!oldTime.equalsIgnoreCase(time)) {
+			// 表达式调度构建器
+			CronScheduleBuilder scheduleBuilder = CronScheduleBuilder
+					.cronSchedule(time);
+			// 按新的cronExpression表达式重新构建trigger
+			trigger = trigger.getTriggerBuilder().withIdentity(triggerKey)
+					.withSchedule(scheduleBuilder).build();
+			// 按新的trigger重新设置job执行
+			sched.rescheduleJob(triggerKey, trigger);
 		}
 	}
 
@@ -192,14 +179,11 @@ public class QuartzManager {
 	 * @param jobName
 	 * @param jobGroup
 	 */
-	public static void pauseJob(String jobName, String jobGroup) {
-		try {
-			Scheduler sched = schedulerFactory.getScheduler();
-			JobKey jobKey = JobKey.jobKey(jobName, jobGroup);
-			sched.pauseJob(jobKey);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+	public static void pauseJob(String jobName, String jobGroup)
+			throws SchedulerException {
+		Scheduler sched = schedulerFactory.getScheduler();
+		JobKey jobKey = JobKey.jobKey(jobName, jobGroup);
+		sched.pauseJob(jobKey);
 	}
 
 	/**
@@ -208,14 +192,11 @@ public class QuartzManager {
 	 * @param jobName
 	 * @param jobGroup
 	 */
-	public static void resumeJob(String jobName, String jobGroup) {
-		try {
-			Scheduler sched = schedulerFactory.getScheduler();
-			JobKey jobKey = JobKey.jobKey(jobName, jobGroup);
-			sched.resumeJob(jobKey);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+	public static void resumeJob(String jobName, String jobGroup)
+			throws SchedulerException {
+		Scheduler sched = schedulerFactory.getScheduler();
+		JobKey jobKey = JobKey.jobKey(jobName, jobGroup);
+		sched.resumeJob(jobKey);
 	}
 
 	/**
@@ -223,20 +204,12 @@ public class QuartzManager {
 	 * 
 	 * @param jobName
 	 * @param jobGroupName
-	 * @param triggerName
-	 * @param triggerGroupName
 	 * 
 	 */
-	public static void removeJob(String jobName, String jobGroupName,
-			String triggerName, String triggerGroupName) {
-		try {
-			Scheduler sched = schedulerFactory.getScheduler();
-			sched.pauseTrigger(new TriggerKey(triggerName, triggerGroupName));// 停止触发器
-			sched.unscheduleJob(new TriggerKey(triggerName, triggerGroupName));// 移除触发器
-			sched.deleteJob(new JobKey(jobName, jobGroupName));// 删除任务
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+	public static void removeJob(String jobName, String jobGroupName)
+			throws SchedulerException {
+		Scheduler sched = schedulerFactory.getScheduler();
+		sched.deleteJob(JobKey.jobKey(jobName, jobGroupName));// 删除任务
 	}
 
 	/**
@@ -248,13 +221,9 @@ public class QuartzManager {
 	 *            执行参数
 	 */
 	public static void startJobNow(String jobName, String jobGroupName,
-			JobDataMap data) {
-		try {
-			Scheduler sched = schedulerFactory.getScheduler();
-			sched.triggerJob(JobKey.jobKey(jobName, jobGroupName), data);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+			JobDataMap data) throws SchedulerException {
+		Scheduler sched = schedulerFactory.getScheduler();
+		sched.triggerJob(JobKey.jobKey(jobName, jobGroupName), data);
 	}
 
 	/**
@@ -262,36 +231,24 @@ public class QuartzManager {
 	 * 
 	 * 
 	 */
-	public static void startJobs() {
-		try {
-			Scheduler sched = schedulerFactory.getScheduler();
-			sched.start();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+	public static void startJobs() throws SchedulerException {
+		Scheduler sched = schedulerFactory.getScheduler();
+		sched.start();
 	}
 
 	/**
 	 * @Description:关闭所有定时任务
 	 * 
 	 */
-	public static void shutdownJobs() {
-		try {
-			Scheduler sched = schedulerFactory.getScheduler();
-			if (!sched.isShutdown()) {
-				sched.shutdown();
-			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+	public static void shutdownJobs() throws SchedulerException {
+		Scheduler sched = schedulerFactory.getScheduler();
+		if (!sched.isShutdown()) {
+			sched.shutdown();
 		}
 	}
 
-	public static boolean isStarted() {
-		try {
-			Scheduler sched = schedulerFactory.getScheduler();
-			return sched.isStarted();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+	public static boolean isStarted() throws SchedulerException {
+		Scheduler sched = schedulerFactory.getScheduler();
+		return sched.isStarted();
 	}
 }
