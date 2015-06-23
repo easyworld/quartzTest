@@ -11,16 +11,29 @@
 <script type="text/javascript" src="static/dist/js/jquery-1.11.2.min.js"></script>
 <script type="text/javascript" src="static/dist/js/bootstrap.min.js"></script>
 <script type="text/javascript">
-	$(function() {
+	$(document).ready(function() {
+		var button = $("#start");
+		button.addClass("disabled");
+		$.post("isStart.php",function(data){
+			
+			if(data=='true'){
+				button.text("全部停止");
+			}else if(data == 'false'){
+				button.text("全部开始");
+			}else{
+				return
+			}
+			button.removeClass("disabled");
+		});
 		//添加按钮
 		$("#addTask").click(function(){
 			$(this).addClass("disabled");
 			var button = $(this);
 			var param = $("#addForm").serialize();
-			alert("sss");
 			$.post("addJob.php",param,function(data){
 				alert(data);
 				button.removeClass("disabled");
+				window.location.reload();
 			});
 		});
 		$("#start").click(function(){
@@ -38,6 +51,40 @@
 			});
 		});
 	});
+	function pause(btn,name,group){
+		var button = $(btn);
+		button.addClass("disabled");
+		$.post("pauseJob.php",{name:name,group:group},function(data){
+			if(data == 'success'){
+				button.get(0).onclick = "resume(this,'"+name+"','"+group+"')";
+				button.text("继续");
+				button.removeClass("disabled");
+				window.location.reload();
+			}else return
+		});
+	}
+	function resume(btn,name,group){
+		var button = $(btn);
+		button.addClass("disabled");
+		$.post("resumeJob.php",{name:name,group:group},function(data){
+			if(data == 'success'){
+				button.get(0).onclick = "pause(this,'"+name+"','"+group+"')";
+				button.text("暂停");
+				button.removeClass("disabled");
+				window.location.reload();
+			}else return
+		});
+	}
+	function del(btn,name,group){
+		var button = $(btn);
+		button.addClass("disabled");
+		$.post("deleteJob.php",{name:name,group:group},function(data){
+			if(data == 'success'){
+				button.removeClass("disabled");
+				window.location.reload();
+			}else return
+		});
+	}
 </script>
 <link rel="stylesheet" href="static/dist/css/bootstrap.min.css" />
 <link rel="stylesheet" href="static/dist/css/bootstrap-theme.min.css" />
@@ -88,11 +135,11 @@
 					    <table class="table table-bordered">
 					    	<thead>
 					    		<tr>
-					    			<th>任务名称</th>
-					    			<th>任务组</th>
-					    			<th>cron表达式</th>
-					    			<th>状态</th>
-					    			<th>备注</th>
+					    			<th style="width:80px">任务名称</th>
+					    			<th style="width:80px">任务组</th>
+					    			<th style="width:95px">cron表达式</th>
+					    			<th style="width:60px">状态</th>
+					    			<th style="width:90px">备注</th>
 					    			<th>操作</th>
 					    		</tr>
 					    	</thead>
@@ -108,8 +155,15 @@
 												<td><c:out value="${map.desc}"/></td>
 												<td>
 								    				<div class="btn-group" role="group" aria-label="buttonGroup">
-														<button id="pause" type="button" class="btn btn-default chinese">暂停</button>
-														<button id="delete" type="button" class="btn btn-default chinese">删除</button>
+								    					<c:choose>
+									    					<c:when test="${map.jobStatus == 'PAUSED'}">
+									    						<button id="resume" type="button" class="btn btn-default chinese" onclick="resume(this,'${map.jobName}','${map.jobGroup}')">继续</button>
+									    					</c:when>
+									    					<c:otherwise>
+									    						<button id="pause" type="button" class="btn btn-default chinese" onclick="pause(this,'${map.jobName}','${map.jobGroup}')">暂停</button>
+									    					</c:otherwise>
+								    					</c:choose>
+														<button id="delete" type="button" class="btn btn-default chinese" onclick="del(this,'${map.jobName}','${map.jobGroup}')">删除</button>
 														<button id="modify" type="button" class="btn btn-default chinese">修改表达式</button>
 														<button id="run" type="button" class="btn btn-default chinese">立即运行一次</button>
 													</div>
