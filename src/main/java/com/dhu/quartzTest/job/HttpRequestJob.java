@@ -12,13 +12,17 @@ import java.util.Map;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HttpRequestJob implements Job {
+	
+	private static Logger _log = LoggerFactory.getLogger(HttpRequestJob.class);  
 	@Override
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		String url = arg0.getMergedJobDataMap().getString("url");
 		String param = arg0.getMergedJobDataMap().getString("param");
-		System.out.println(sendPost(url, param));
+		_log.info(sendPost(url, param));
 	}
 
 	/**
