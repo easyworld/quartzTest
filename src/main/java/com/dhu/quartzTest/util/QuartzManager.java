@@ -29,7 +29,6 @@ import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
-import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.matchers.GroupMatcher;
 
@@ -107,6 +106,21 @@ public class QuartzManager {
 	}
 
 	/**
+	 * 获取一个任务的参数Map
+	 * 
+	 * @param jobName
+	 * @param jobGroupName
+	 * @return
+	 * @throws SchedulerException
+	 */
+	public static JobDataMap getOneJobMap(String jobName, String jobGroupName)
+			throws SchedulerException {
+		Scheduler scheduler = schedulerFactory.getScheduler();
+		return scheduler.getJobDetail(JobKey.jobKey(jobName, jobGroupName))
+				.getJobDataMap();
+	}
+
+	/**
 	 * @Description: 添加一个定时任务
 	 * 
 	 * @param jobName
@@ -152,24 +166,22 @@ public class QuartzManager {
 	public static void modifyJobTime(String jobName, String jobGroupName,
 			String time) throws SchedulerException {
 		Scheduler sched = schedulerFactory.getScheduler();
-
-		TriggerKey triggerKey = TriggerKey.triggerKey(jobName, jobGroupName);
-
-		CronTrigger trigger = (CronTrigger) sched.getTrigger(triggerKey);
-
-		if (trigger == null) {
+		List<? extends Trigger> list = sched.getTriggersOfJob(JobKey.jobKey(jobName,jobGroupName));
+		if (list == null || list.isEmpty()) {
 			return;
 		}
+		CronTrigger trigger = (CronTrigger) list.get(0);
 		String oldTime = trigger.getCronExpression();
+		
 		if (!oldTime.equalsIgnoreCase(time)) {
 			// 表达式调度构建器
 			CronScheduleBuilder scheduleBuilder = CronScheduleBuilder
 					.cronSchedule(time);
 			// 按新的cronExpression表达式重新构建trigger
-			trigger = trigger.getTriggerBuilder().withIdentity(triggerKey)
+			trigger = trigger.getTriggerBuilder().withIdentity(trigger.getKey())
 					.withSchedule(scheduleBuilder).build();
 			// 按新的trigger重新设置job执行
-			sched.rescheduleJob(triggerKey, trigger);
+			sched.rescheduleJob(trigger.getKey(), trigger);
 		}
 	}
 
@@ -213,7 +225,7 @@ public class QuartzManager {
 	}
 
 	/**
-	 * 立刻执行一个任务
+	 * 立刻执行一个任务,如果scheduler未开启则开启
 	 * 
 	 * @param jobName
 	 * @param jobGroupName
@@ -223,6 +235,8 @@ public class QuartzManager {
 	public static void startJobNow(String jobName, String jobGroupName,
 			JobDataMap data) throws SchedulerException {
 		Scheduler sched = schedulerFactory.getScheduler();
+		if (sched.isShutdown() || sched.isInStandbyMode())
+			sched.start();
 		sched.triggerJob(JobKey.jobKey(jobName, jobGroupName), data);
 	}
 
@@ -236,8 +250,13 @@ public class QuartzManager {
 		sched.start();
 	}
 
+	public static void pauseJobs() throws SchedulerException {
+		Scheduler sched = schedulerFactory.getScheduler();
+		sched.pauseAll();
+	}
+
 	/**
-	 * @Description:关闭所有定时任务
+	 * @Description:关闭并删除所有定时任务
 	 * 
 	 */
 	public static void shutdownJobs() throws SchedulerException {

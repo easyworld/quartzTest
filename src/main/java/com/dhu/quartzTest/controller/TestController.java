@@ -88,6 +88,17 @@ public class TestController {
 		}
 	}
 
+	@RequestMapping(value = "editJobTime", produces = "text/html;charset=UTF-8")
+	public @ResponseBody String editJobTime(String name, String group,
+			String time) {
+		try {
+			QuartzManager.modifyJobTime(name, group, time);
+			return Constant.SUCCESS;
+		} catch (Exception e) {
+			return e.getMessage();
+		}
+	}
+
 	@RequestMapping(value = "start", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String start() {
 		try {
@@ -136,6 +147,24 @@ public class TestController {
 	public @ResponseBody String deleteJob(String name, String group) {
 		try {
 			QuartzManager.removeJob(name, group);
+			return Constant.SUCCESS;
+		} catch (Exception e) {
+			return e.getMessage();
+		}
+	}
+
+	/**
+	 * 立刻执行任务
+	 * 
+	 * @param name
+	 * @param group
+	 * @return
+	 */
+	@RequestMapping(value = "runJobNow", produces = "text/html;charset=UTF-8")
+	public @ResponseBody String runJobNow(String name, String group) {
+		try {
+			JobDataMap map = QuartzManager.getOneJobMap(name, group);
+			QuartzManager.startJobNow(name, group, map);
 			return Constant.SUCCESS;
 		} catch (Exception e) {
 			return e.getMessage();
