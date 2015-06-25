@@ -18,7 +18,7 @@ public class HttpRequestJob implements Job {
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		String url = arg0.getMergedJobDataMap().getString("url");
 		String param = arg0.getMergedJobDataMap().getString("param");
-
+		System.out.println(sendPost(url, param));
 	}
 
 	/**
