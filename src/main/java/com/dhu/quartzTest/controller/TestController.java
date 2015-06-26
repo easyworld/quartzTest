@@ -6,17 +6,21 @@ import net.sf.json.JSONArray;
 
 import org.quartz.JobDataMap;
 import org.quartz.SchedulerException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.dhu.quartzTest.job.TestJob;
+import com.dhu.quartzTest.job.HttpRequestJob;
 import com.dhu.quartzTest.util.Constant;
 import com.dhu.quartzTest.util.QuartzManager;
 
 @Controller
 public class TestController {
+
+	private static Logger _log = LoggerFactory.getLogger(TestController.class);
 
 	@RequestMapping(value = "404")
 	public ModelAndView pageNotFound() {
@@ -75,13 +79,14 @@ public class TestController {
 
 	@RequestMapping(value = "addJob", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String addJob(String name, String group, String time,
-			String str) {
+			String url) {
 		JobDataMap map = new JobDataMap();
-		map.put("str", str);
+		map.put("url", url);
 		try {
 			QuartzManager.addJob(name, group,
 					String.valueOf(System.currentTimeMillis()),
-					Constant.TRIGGER_GROUP_NAME, TestJob.class, map, time);
+					Constant.TRIGGER_GROUP_NAME, HttpRequestJob.class, map,
+					time);
 			return Constant.SUCCESS;
 		} catch (Exception e) {
 			return e.getMessage();
@@ -169,5 +174,17 @@ public class TestController {
 		} catch (Exception e) {
 			return e.getMessage();
 		}
+	}
+
+	/**
+	 * url请求测试方法
+	 * 
+	 * @param param
+	 * @return
+	 */
+	@RequestMapping("/test")
+	public @ResponseBody String test(String param) {
+		_log.info("Calling test success");
+		return Constant.SUCCESS;
 	}
 }
