@@ -109,13 +109,16 @@
 		$.post("runJobNow.php",{name:name,group:group},function(data){
 			if(data=='success'){
 				button.removeClass("disabled");
-				window.location.reload();
+				alert("执行成功");
 			}else return;
 		});
 	}
-	function modify(name,group){
+	function modify(name,group,cronExpress){
 		var editCronModal = $("#editCronModal");
-		editCronModal.find("input[name='time']").val("");
+		if(cronExpress == "")
+			editCronModal.find("input[name='time']").val("");
+		else
+			editCronModal.find("input[name='time']").val(cronExpress);
 		editCronModal.find("input[name='name']").val(name);
 		editCronModal.find("input[name='group']").val(group);
 		editCronModal.modal({show:true,backdrop:false});
@@ -141,20 +144,26 @@
 	font-family: "Microsoft YaHei", 微软雅黑, "MicrosoftJhengHei", 华文细黑, STHeiti,
 		MingLiu
 }
+.box-shadow {
+	box-shadow:0 0 25px 0 #aaa;
+}
+.text-shadow{
+	text-shadow: #888 0 0 1px;
+}
 -->
 </style>
 </head>
 <body>
-	<div class="container">
+	<div class="container text-shadow">
 		<div class="jumbotron">
-			<h1 class="chinese">Hello</h1>
-			<p class="chinese">这是一个quartz的测试</p>
+			<h1 class="chinese">703工作室URL调度平台</h1>
+			<p class="chinese">V0.1@20150626</p>
 			<p>
 				<button id="start" type="button"  class="btn btn-primary chinese">全部开始</button>
-				<button id="addTask" type="button"  class="btn btn-primary chinese">添加任务</button>
+				<button id="addTask" type="button"  class="btn btn-primary chinese">添加URL请求任务</button>
 			</p>
 			
-			<div class="panel panel-default">
+			<div class="panel panel-default box-shadow">
 				<div class="panel-heading">
 					<span class="panel-title chinese" >计划中任务</span>
 				</div>
@@ -192,7 +201,8 @@
 									    					</c:otherwise>
 								    					</c:choose>
 														<button id="delete" type="button" class="btn btn-default chinese" onclick="del(this,'${map.jobName}','${map.jobGroup}')">删除</button>
-														<button id="modify" type="button" class="btn btn-default chinese" onclick="modify('${map.jobName}','${map.jobGroup}')">修改表达式</button>
+														<button id="modify" type="button" class="btn btn-default chinese" onclick="modify('${map.jobName}','${map.jobGroup}','${map.cronExpression}')">修改表达式</button>
+														<button id="modify" type="button" class="btn btn-default chinese" onclick="modify('${map.jobName}','${map.jobGroup}','${map.cronExpression}')">查看/修改URL</button>
 														<button id="run" type="button" class="btn btn-default chinese" onclick="run(this,'${map.jobName}','${map.jobGroup}')">立即运行一次</button>
 													</div>
 								    			</td>
@@ -209,7 +219,7 @@
 				</div>
 			</div>
 			
-			<div class="panel panel-primary">
+			<div class="panel panel-primary box-shadow">
 				<div class="panel-heading">
 					<h3 class="panel-title chinese">运行中任务</h3>
 				</div>
@@ -293,8 +303,8 @@
 					<input type="text" class="form-control" name="time" placeholder="time" />
 				</div>
 				<div class="form-group">
-					<label for="str">任务参数</label>
-					<input type="text" class="form-control" name="str" placeholder="str" />
+					<label for="str">URL参数</label>
+					<input type="text" class="form-control" name="url" placeholder="url" />
 				</div>
 			</form>
 	      </div>
