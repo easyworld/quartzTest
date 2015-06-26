@@ -16,8 +16,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HttpRequestJob implements Job {
-	
-	private static Logger _log = LoggerFactory.getLogger(HttpRequestJob.class);  
+
+	private static Logger _log = LoggerFactory.getLogger(HttpRequestJob.class);
+
 	@Override
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		String url = arg0.getMergedJobDataMap().getString("url");
@@ -38,7 +39,9 @@ public class HttpRequestJob implements Job {
 		String result = "";
 		BufferedReader in = null;
 		try {
-			String urlNameString = url + "?" + param;
+			String urlNameString = url;
+			if (param != null && !param.isEmpty())
+				urlNameString += ("?" + param);
 			URL realUrl = new URL(urlNameString);
 			// 打开和URL之间的连接
 			URLConnection connection = realUrl.openConnection();
@@ -92,6 +95,8 @@ public class HttpRequestJob implements Job {
 		PrintWriter out = null;
 		BufferedReader in = null;
 		String result = "";
+		if (!url.startsWith("http://"))
+			url = "http://" + url;
 		try {
 			URL realUrl = new URL(url);
 			// 打开和URL之间的连接
@@ -118,8 +123,7 @@ public class HttpRequestJob implements Job {
 				result += line;
 			}
 		} catch (Exception e) {
-			System.out.println("发送 POST 请求出现异常！" + e);
-			e.printStackTrace();
+			_log.error("发送 POST 请求出现异常！" + e.getMessage());
 		}
 		// 使用finally块来关闭输出流、输入流
 		finally {
@@ -135,5 +139,10 @@ public class HttpRequestJob implements Job {
 			}
 		}
 		return result;
+	}
+
+	public static void main(String[] args) {
+		HttpRequestJob j = new HttpRequestJob();
+		System.out.println(j.sendPost("www.baidu.com", null));
 	}
 }
