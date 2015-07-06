@@ -8,19 +8,23 @@ import org.quartz.JobDataMap;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.dhu.quartzTest.job.HttpRequestJob;
+import com.dhu.quartzTest.service.QuartzService;
 import com.dhu.quartzTest.util.Constant;
-import com.dhu.quartzTest.util.QuartzManager;
 
 @Controller
 public class TestController {
 
 	private static Logger _log = LoggerFactory.getLogger(TestController.class);
+
+	@Autowired
+	private QuartzService quartzService;
 
 	@RequestMapping(value = "404")
 	public ModelAndView pageNotFound() {
@@ -36,8 +40,8 @@ public class TestController {
 	public ModelAndView index() {
 		ModelAndView mav = new ModelAndView("index");
 		try {
-			mav.addObject("plist", QuartzManager.getPlannedJobList());
-			mav.addObject("rlist", QuartzManager.getRunningJobList());
+			mav.addObject("plist", quartzService.getPlannedJobList());
+			mav.addObject("rlist", quartzService.getRunningJobList());
 		} catch (SchedulerException e) {
 			// do nothing
 		}
@@ -52,7 +56,7 @@ public class TestController {
 	@RequestMapping(value = "getPlannedJobList", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String getPlannedJobList() {
 		try {
-			List<?> list = QuartzManager.getPlannedJobList();
+			List<?> list = quartzService.getPlannedJobList();
 			String json = JSONArray.fromObject(list).toString();
 			return json;
 		} catch (SchedulerException e) {
@@ -69,7 +73,7 @@ public class TestController {
 	@RequestMapping(value = "getRunningJobList", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String getRunningJobList(String param) {
 		try {
-			List<?> list = QuartzManager.getRunningJobList();
+			List<?> list = quartzService.getRunningJobList();
 			String json = JSONArray.fromObject(list).toString();
 			return json;
 		} catch (SchedulerException e) {
@@ -83,7 +87,7 @@ public class TestController {
 		JobDataMap map = new JobDataMap();
 		map.put("url", url);
 		try {
-			QuartzManager.addJob(name, group,
+			quartzService.addJob(name, group,
 					String.valueOf(System.currentTimeMillis()),
 					Constant.TRIGGER_GROUP_NAME, HttpRequestJob.class, map,
 					time);
@@ -93,11 +97,21 @@ public class TestController {
 		}
 	}
 
-	@RequestMapping(value = "editJobTime", produces = "text/html;charset=UTF-8")
+	/**
+	 * 修改job的cron表达式和url
+	 * 
+	 * @param name
+	 * @param group
+	 * @param time
+	 * @param url
+	 * @return
+	 */
+	@RequestMapping(value = "editJob", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String editJobTime(String name, String group,
-			String time) {
+			String time, String url) {
 		try {
-			QuartzManager.modifyJobTime(name, group, time);
+			quartzService.modifyJobTime(name, group, time);
+			quartzService.modifyJobUrl(name, group, url);
 			return Constant.SUCCESS;
 		} catch (Exception e) {
 			return e.getMessage();
@@ -107,11 +121,11 @@ public class TestController {
 	@RequestMapping(value = "start", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String start() {
 		try {
-			if (QuartzManager.isStarted()) {
-				QuartzManager.shutdownJobs();
+			if (quartzService.isStarted()) {
+				quartzService.shutdownJobs();
 				return Constant.SHUTDOWN;
 			} else {
-				QuartzManager.startJobs();
+				quartzService.startJobs();
 				return Constant.START;
 			}
 		} catch (Exception e) {
@@ -122,7 +136,7 @@ public class TestController {
 	@RequestMapping(value = "isStart", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String isStart() {
 		try {
-			return QuartzManager.isStarted() ? "true" : "false";
+			return quartzService.isStarted() ? "true" : "false";
 		} catch (Exception e) {
 			return e.getMessage();
 		}
@@ -131,7 +145,7 @@ public class TestController {
 	@RequestMapping(value = "pauseJob", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String pauseJob(String name, String group) {
 		try {
-			QuartzManager.pauseJob(name, group);
+			quartzService.pauseJob(name, group);
 			return Constant.SUCCESS;
 		} catch (Exception e) {
 			return e.getMessage();
@@ -141,7 +155,7 @@ public class TestController {
 	@RequestMapping(value = "resumeJob", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String resumeJob(String name, String group) {
 		try {
-			QuartzManager.resumeJob(name, group);
+			quartzService.resumeJob(name, group);
 			return Constant.SUCCESS;
 		} catch (Exception e) {
 			return e.getMessage();
@@ -151,7 +165,7 @@ public class TestController {
 	@RequestMapping(value = "deleteJob", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String deleteJob(String name, String group) {
 		try {
-			QuartzManager.removeJob(name, group);
+			quartzService.removeJob(name, group);
 			return Constant.SUCCESS;
 		} catch (Exception e) {
 			return e.getMessage();
@@ -168,8 +182,8 @@ public class TestController {
 	@RequestMapping(value = "runJobNow", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String runJobNow(String name, String group) {
 		try {
-			JobDataMap map = QuartzManager.getOneJobMap(name, group);
-			QuartzManager.startJobNow(name, group, map);
+			JobDataMap map = quartzService.getOneJobMap(name, group);
+			quartzService.startJobNow(name, group, map);
 			return Constant.SUCCESS;
 		} catch (Exception e) {
 			return e.getMessage();
@@ -184,6 +198,12 @@ public class TestController {
 	 */
 	@RequestMapping("/test")
 	public @ResponseBody String test(String param) {
+		_log.info("Calling test start");
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		_log.info("Calling test success");
 		return Constant.SUCCESS;
 	}
