@@ -113,22 +113,27 @@
 			}else return;
 		});
 	}
-	function modify(name,group,cronExpress){
-		var editCronModal = $("#editCronModal");
+	function modify(name,group,cronExpress,url){
+		var editModal = $("#editModal");
 		if(cronExpress == "")
-			editCronModal.find("input[name='time']").val("");
+			editModal.find("input[name='time']").val("");
 		else
-			editCronModal.find("input[name='time']").val(cronExpress);
-		editCronModal.find("input[name='name']").val(name);
-		editCronModal.find("input[name='group']").val(group);
-		editCronModal.modal({show:true,backdrop:false});
+			editModal.find("input[name='time']").val(cronExpress);
+		if(url == "")
+			editModal.find("input[name='url']").val("");
+		else
+			editModal.find("input[name='url']").val(url);
+		
+		editModal.find("input[name='name']").val(name);
+		editModal.find("input[name='group']").val(group);
+		editModal.modal({show:true,backdrop:false});
 	}
-	function submitCron(){
-		var editCronModal = $("#editCronModal");
-		var param = editCronModal.find("form").serialize();
-		$.post("editJobTime.php",param,function(data){
+	function submitEdit(){
+		var editModal = $("#editModal");
+		var param = editModal.find("form").serialize();
+		$.post("editJob.php",param,function(data){
 			if(data=='success'){
-				editCronModal.modal('hide');
+				editModal.modal('hide');
 				window.location.reload();
 			}else{
 				alert(data);
@@ -157,7 +162,7 @@
 	<div class="container text-shadow">
 		<div class="jumbotron">
 			<h1 class="chinese">703工作室URL调度平台</h1>
-			<p class="chinese">V0.1@20150626</p>
+			<p class="chinese">V0.11@20150706</p>
 			<p>
 				<button id="start" type="button"  class="btn btn-primary chinese">全部开始</button>
 				<button id="addTask" type="button"  class="btn btn-primary chinese">添加URL请求任务</button>
@@ -175,6 +180,7 @@
 					    			<th>任务名称</th>
 					    			<th>任务组</th>
 					    			<th>cron表达式</th>
+					    			<th>url</th>
 					    			<th>状态</th>
 					    			<!--<th>备注</th>-->
 					    			<th>操作</th>
@@ -185,9 +191,10 @@
 									<c:when test="${plist!=null and fn:length(plist) > 0}">
 										<c:forEach var="map" items="${plist}">
 											<tr>
-												<td><c:out value="${map.jobName}"/></td>
+												<td data-toggle="tooltip" data-placement="top" title="${map.jobName}"><c:out value="${map.jobName}"/></td>
 												<td><c:out value="${map.jobGroup}"/></td>
 												<td><c:out value="${map.cronExpression}"/></td>
+												<td data-toggle="tooltip" data-placement="top" title="${map.url}"><c:out value="${fn:substring(map.url, 0, 10)}..."/></td>
 												<td><c:out value="${map.jobStatus}"/></td>
 												<!--<td><c:out value="${map.desc}"/></td>-->
 												<td>
@@ -201,8 +208,7 @@
 									    					</c:otherwise>
 								    					</c:choose>
 														<button id="delete" type="button" class="btn btn-default chinese" onclick="del(this,'${map.jobName}','${map.jobGroup}')">删除</button>
-														<button id="modify" type="button" class="btn btn-default chinese" onclick="modify('${map.jobName}','${map.jobGroup}','${map.cronExpression}')">修改表达式</button>
-														<button id="modify" type="button" class="btn btn-default chinese" onclick="modify('${map.jobName}','${map.jobGroup}','${map.cronExpression}')">查看/修改URL</button>
+														<button id="modify" type="button" class="btn btn-default chinese" onclick="modify('${map.jobName}','${map.jobGroup}','${map.cronExpression}','${map.url }')">修改</button>
 														<button id="run" type="button" class="btn btn-default chinese" onclick="run(this,'${map.jobName}','${map.jobGroup}')">立即运行一次</button>
 													</div>
 								    			</td>
@@ -257,18 +263,20 @@
 			</div>
 		</div>
 	</div>
-	<div class="modal fade" id="editCronModal" tabindex="-1" role="dialog" aria-labelledby="editCronModal">
+	<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModal">
 	  <div class="modal-dialog" role="document">
 	    <div class="modal-content">
 	      <div class="modal-header">
 	        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-	        <h4 class="modal-title" id="editCronModalTitle">修改cron表达式</h4>
+	        <h4 class="modal-title" id="editModalTitle">修改</h4>
 	      </div>
 	      <div class="modal-body">
 	        <form>
 	          <div class="form-group">
-	            <label for="recipient-name" class="control-label">输入新的表达式:</label>
+	            <label for="time" class="control-label">输入新的表达式:</label>
 	            <input type="text" class="form-control" name="time">
+	            <label for="url" class="control-label">输入新的URL:</label>
+	            <input type="text" class="form-control" name="url">
 	            <input type="hidden" class="form-control" name="name">
 	            <input type="hidden" class="form-control" name="group">
 	          </div>
@@ -276,7 +284,7 @@
 	      </div>
 	      <div class="modal-footer">
 	        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-	        <button type="button" class="btn btn-primary" onclick="submitCron()">修改</button>
+	        <button type="button" class="btn btn-primary" onclick="submitEdit()">修改</button>
 	      </div>
 	    </div>
 	  </div>
