@@ -166,19 +166,21 @@ public class QuartzManager {
 	public static void modifyJobTime(String jobName, String jobGroupName,
 			String time) throws SchedulerException {
 		Scheduler sched = schedulerFactory.getScheduler();
-		List<? extends Trigger> list = sched.getTriggersOfJob(JobKey.jobKey(jobName,jobGroupName));
+		List<? extends Trigger> list = sched.getTriggersOfJob(JobKey.jobKey(
+				jobName, jobGroupName));
 		if (list == null || list.isEmpty()) {
 			return;
 		}
 		CronTrigger trigger = (CronTrigger) list.get(0);
 		String oldTime = trigger.getCronExpression();
-		
+
 		if (!oldTime.equalsIgnoreCase(time)) {
 			// 表达式调度构建器
 			CronScheduleBuilder scheduleBuilder = CronScheduleBuilder
 					.cronSchedule(time);
 			// 按新的cronExpression表达式重新构建trigger
-			trigger = trigger.getTriggerBuilder().withIdentity(trigger.getKey())
+			trigger = trigger.getTriggerBuilder()
+					.withIdentity(trigger.getKey())
 					.withSchedule(scheduleBuilder).build();
 			// 按新的trigger重新设置job执行
 			sched.rescheduleJob(trigger.getKey(), trigger);
