@@ -8,6 +8,10 @@ public class ScheduleJob {
 	private String jobGroup;
 	/* job状态 */
 	private String jobStatus;
+
+	/* 任务请求URL */
+	private String url;
+
 	/* cron表达式 */
 	private String cronExpression;
 	/* 任务描述 */
@@ -39,6 +43,14 @@ public class ScheduleJob {
 
 	public void setJobStatus(String jobStatus) {
 		this.jobStatus = jobStatus;
+	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
 	}
 
 	public String getCronExpression() {
