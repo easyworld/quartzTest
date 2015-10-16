@@ -11,7 +11,10 @@ public class ScheduleJob {
 
 	/* 任务请求URL */
 	private String url;
-
+	/* 任务请求方式GET/POST */
+	private String method;
+	/* 任务请求参数 */
+	private String params;
 	/* cron表达式 */
 	private String cronExpression;
 	/* 任务描述 */
@@ -51,6 +54,22 @@ public class ScheduleJob {
 
 	public void setUrl(String url) {
 		this.url = url;
+	}
+
+	public String getMethod() {
+		return method;
+	}
+
+	public void setMethod(String method) {
+		this.method = method;
+	}
+
+	public String getParams() {
+		return params;
+	}
+
+	public void setParams(String params) {
+		this.params = params;
 	}
 
 	public String getCronExpression() {
