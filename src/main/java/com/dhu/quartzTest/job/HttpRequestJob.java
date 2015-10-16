@@ -15,6 +15,8 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dhu.quartzTest.util.JSONUtil;
+
 public class HttpRequestJob implements Job {
 
 	private static Logger _log = LoggerFactory.getLogger(HttpRequestJob.class);
@@ -23,7 +25,12 @@ public class HttpRequestJob implements Job {
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		String url = arg0.getMergedJobDataMap().getString("url");
 		String param = arg0.getMergedJobDataMap().getString("param");
-		_log.info(sendPost(url, param));
+		param = JSONUtil.myJson2ParamString(param);
+		String method = arg0.getMergedJobDataMap().getString("method");
+		if ("get".equalsIgnoreCase(method))
+			_log.info(sendGet(url, null));
+		else if ("post".equalsIgnoreCase(method))
+			_log.info(sendPost(url, param));
 	}
 
 	/**
