@@ -279,6 +279,18 @@ public class QuartzService {
 	}
 
 	/**
+	 * 让进程进入standby模式，而不是关闭
+	 * 
+	 * @throws SchedulerException
+	 */
+	public void standByJobs() throws SchedulerException {
+		Scheduler sched = this.scheduler;
+		if (sched.isStarted() && !sched.isInStandbyMode()) {
+			sched.standby();
+		}
+	}
+
+	/**
 	 * @Description:关闭并删除所有定时任务
 	 * 
 	 */
@@ -289,8 +301,8 @@ public class QuartzService {
 		}
 	}
 
-	public boolean isStarted() throws SchedulerException {
-		return this.scheduler.isStarted();
+	public boolean isInStandbyMode() throws SchedulerException {
+		return this.scheduler.isInStandbyMode();
 	}
 
 }
