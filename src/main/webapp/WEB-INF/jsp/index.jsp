@@ -11,14 +11,19 @@
 <script type="text/javascript" src="static/dist/js/jquery-1.11.2.min.js"></script>
 <script type="text/javascript" src="static/dist/js/bootstrap.min.js"></script>
 <script type="text/javascript">
+	html = '<div class="form-group">'+
+	'<input type="text" class="urlInput form-control" placeholder="key" onfocus="insertUrlParam(this)" />'+
+	'<input type="text" class="urlInput form-control" placeholder="value" onfocus="insertUrlParam(this)" />'+
+	'<span class="trashParam glyphicon glyphicon-trash" aria-hidden="true" onclick="delUrlParam(this)"></span>' +
+	'</div>';
 	$(document).ready(function() {
 		var button = $("#start");
 		button.addClass("disabled");
-		$.post("isStart.php",function(data){
+		$.post("isInStandbyMode.php",function(data){
 			
-			if(data=='true'){
-				button.text("调度器停止");
-			}else if(data == 'false'){
+			if(data=='false'){
+				button.text("调度器待命");
+			}else if(data == 'true'){
 				button.text("调度器开始");
 			}else{
 				return
@@ -27,6 +32,10 @@
 		});
 		//添加按钮
 		$("#addTask").click(function(){
+			//开始添加前的准备工作
+			$("#reuqestParams").empty();
+			$("#params").val("");
+			$("#requestMethod").get(0).value = "GET";
 			$("#addJobModal").modal('show');
 			var form = $("#addForm");
 			form.find("input[type='text']").each(function(){
@@ -35,6 +44,19 @@
 		});
 		//添加提交按钮
 		$("#submitAddTask").click(function(){
+			// 拼接字段
+			if($("#requestMethod").val() == 'POST'){
+				var $divs = $("#reuqestParams>div");
+				var array = new Array();
+				$divs.each(function(){
+					var key = $(this).find("input:eq(0)").val();
+					var value = $(this).find("input:eq(1)").val();
+					if(key != "" && value != ""){
+						array.push(new Array(key,value));
+					}
+				});
+				$("#params").attr("value",JSON.stringify(array));
+			}
 			var button = $(this);
 			var param = $("#addForm").serialize();
 			$.post("addJob.php",param,function(data){
@@ -61,7 +83,36 @@
 				window.location.reload();
 			});
 		});
+		//get,post转化
+		$("#requestMethod").change(function(){
+			if(this.value=='GET'){
+				$("#reuqestParams").text("");
+			}
+			else if(this.value=='POST'){
+				var $params = $("#reuqestParams");
+				$params.append(html);
+			}
+		});
 	});
+	function insertUrlParam(input){
+		var $params = $("#reuqestParams");
+		$params.append(html);
+		$(input).parent().find("input").each(function(){
+			$(this).attr("onfocus","");
+		});
+	}
+	function delUrlParam(btn){
+		if($("#reuqestParams>.form-group").length <= 1){
+			return;
+		}
+		$(btn).parent().remove();
+		var $params = $("#reuqestParams");
+		$params.find("div:last>input").each(function(){
+			$(this).bind("onfocus",function(){
+				insertUrlParam(this);
+			});
+		});
+	}
 	function pause(btn,name,group){
 		var button = $(btn);
 		button.addClass("disabled");
@@ -113,6 +164,15 @@
 			}else return;
 		});
 	}
+	
+	function log(btn,name,group){
+		var button = $(btn);
+		button.addClass("disabled");
+		$("#logContent").html('这是一条测试日志');
+		button.removeClass("disabled");
+		$("#logModal").modal('show');
+	}
+	
 	function modify(name,group,cronExpress,url){
 		var editModal = $("#editModal");
 		if(cronExpress == "")
@@ -155,6 +215,14 @@
 .text-shadow{
 	text-shadow: #888 0 0 1px;
 }
+.urlInput{
+	width: 40%;
+	display: inline;
+	margin-right: 10px;
+}
+.trashParam{
+	font-size: 16px;
+}
 -->
 </style>
 </head>
@@ -162,7 +230,7 @@
 	<div class="container text-shadow">
 		<div class="jumbotron">
 			<h1 class="chinese">703工作室URL调度平台</h1>
-			<p class="chinese">V0.11@20150706</p>
+			<p class="chinese">V0.12@20151015</p>
 			<p>
 				<button id="start" type="button"  class="btn btn-primary chinese">全部开始</button>
 				<button id="addTask" type="button"  class="btn btn-primary chinese">添加URL请求任务</button>
@@ -210,6 +278,7 @@
 														<button id="delete" type="button" class="btn btn-default chinese" onclick="del(this,'${map.jobName}','${map.jobGroup}')">删除</button>
 														<button id="modify" type="button" class="btn btn-default chinese" onclick="modify('${map.jobName}','${map.jobGroup}','${map.cronExpression}','${map.url }')">修改</button>
 														<button id="run" type="button" class="btn btn-default chinese" onclick="run(this,'${map.jobName}','${map.jobGroup}')">立即运行一次</button>
+														<button id="log" type="button" class="btn btn-default chinese" onclick="log(this,'${map.jobName}','${map.jobGroup}')">查看日志</button>
 													</div>
 								    			</td>
 											</tr>
@@ -307,18 +376,43 @@
 					<input type="text" class="form-control" name="group" placeholder="group" />
 				</div>
 				<div class="form-group">
-					<label for="time">任务表达式</label>
+					<label for="time">
+						任务表达式
+						<a href="./cron_readme.php" target="_Blank">
+							<span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
+						</a>
+					</label>
 					<input type="text" class="form-control" name="time" placeholder="time" />
 				</div>
 				<div class="form-group">
 					<label for="str">URL参数</label>
-					<input type="text" class="form-control" name="url" placeholder="url" />
+					<div>
+					<input type="text" class="form-control" name="url" style="display: inline;width: 80%" placeholder="url" />
+					<select id="requestMethod" name="method" class="form-control" style="width: 18%;display: inline;"><option selected="selected">GET</option><option>POST</option></select>
+					</div>
 				</div>
+				<div id="reuqestParams" class="form-group"></div>
+				<input id="params" type="hidden" name="params" />
 			</form>
 	      </div>
 	      <div class="modal-footer">
 	        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 	        <button id="submitAddTask" type="button" class="btn btn-primary chinese">添加任务</button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+	<div class="modal fade" id="logModal" tabindex="-1" role="dialog" aria-labelledby="logModal">
+	  <div class="modal-dialog" role="document">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+	        <h4 class="modal-title">日志查看</h4>
+	      </div>
+	      <div class="modal-body" id="logContent">
+	      </div>
+	      <div class="modal-footer">
+	        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 	      </div>
 	    </div>
 	  </div>
