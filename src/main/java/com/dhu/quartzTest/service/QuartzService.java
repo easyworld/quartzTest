@@ -194,16 +194,15 @@ public class QuartzService {
 	 * 
 	 * @param name
 	 * @param group
-	 * @param url
+	 * @param map
+	 *            url、mehtod和params
 	 * @throws SchedulerException
 	 */
-	public void modifyJobUrl(String name, String group, String url)
+	public void modifyJobUrl(String name, String group, JobDataMap map)
 			throws SchedulerException {
 		Trigger trigger = scheduler
 				.getTriggersOfJob(JobKey.jobKey(name, group)).get(0);
 
-		JobDataMap map = new JobDataMap();
-		map.put("url", url);
 		JobDetail jobDetail = JobBuilder.newJob(HttpRequestJob.class)
 				.setJobData(map).withIdentity(name, group).build();
 		removeJob(name, group);

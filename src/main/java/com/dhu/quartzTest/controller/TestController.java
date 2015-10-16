@@ -119,14 +119,23 @@ public class TestController {
 	 * @param group
 	 * @param time
 	 * @param url
+	 * @param method
+	 * @param params
+	 *            可为空
 	 * @return
 	 */
 	@RequestMapping(value = "editJob", produces = "text/html;charset=UTF-8")
-	public @ResponseBody String editJobTime(String name, String group,
-			String time, String url) {
+	public @ResponseBody String editJob(String name, String group, String time,
+			String url, String method,
+			@RequestParam(required = false) String params) {
 		try {
 			quartzService.modifyJobTime(name, group, time);
-			quartzService.modifyJobUrl(name, group, url);
+			JobDataMap map = new JobDataMap();
+			map.put("url", url);
+			map.put("method", method);
+			if (params != null && !params.isEmpty())
+				map.put("params", params);
+			quartzService.modifyJobUrl(name, group, map);
 			return Constant.SUCCESS;
 		} catch (Exception e) {
 			return e.getMessage();

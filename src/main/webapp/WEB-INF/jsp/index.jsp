@@ -344,11 +344,21 @@
 	          <div class="form-group">
 	            <label for="time" class="control-label">输入新的表达式:</label>
 	            <input type="text" class="form-control" name="time">
-	            <label for="url" class="control-label">输入新的URL:</label>
-	            <input type="text" class="form-control" name="url">
-	            <input type="hidden" class="form-control" name="name">
-	            <input type="hidden" class="form-control" name="group">
 	          </div>
+	          <div class="form-group">
+	            <label for="url" class="control-label">输入新的URL:</label>
+	            <div>
+					<input type="text" class="form-control" name="url" style="display: inline;width: 80%" placeholder="url" />
+					<select name="method" class="form-control" style="width: 18%;display: inline;">
+						<option selected="selected">GET</option><option>POST</option>
+					</select>
+				</div>  
+	          </div>
+	          <div class="form-group">
+	          	<textarea rows="" cols="" class="form-control" name="params"></textarea>
+	          </div>
+	          <input type="hidden" class="form-control" name="name">
+	          <input type="hidden" class="form-control" name="group">
 	        </form>
 	      </div>
 	      <div class="modal-footer">
