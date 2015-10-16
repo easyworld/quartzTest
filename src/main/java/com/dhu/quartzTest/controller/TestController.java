@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -49,6 +50,16 @@ public class TestController {
 	}
 
 	/**
+	 * cron表达式说明
+	 * 
+	 * @return
+	 */
+	@RequestMapping("/cron_readme")
+	public ModelAndView readme() {
+		return new ModelAndView("cron_readme");
+	}
+
+	/**
 	 * 查询计划中任务
 	 * 
 	 * @return
@@ -83,9 +94,13 @@ public class TestController {
 
 	@RequestMapping(value = "addJob", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String addJob(String name, String group, String time,
-			String url) {
+			String url, String method,
+			@RequestParam(required = false) String params) {
 		JobDataMap map = new JobDataMap();
 		map.put("url", url);
+		map.put("method", method);
+		if (params != null && !params.isEmpty())
+			map.put("params", params);
 		try {
 			quartzService.addJob(name, group,
 					String.valueOf(System.currentTimeMillis()),
@@ -121,22 +136,38 @@ public class TestController {
 	@RequestMapping(value = "start", produces = "text/html;charset=UTF-8")
 	public @ResponseBody String start() {
 		try {
-			if (quartzService.isStarted()) {
-				quartzService.shutdownJobs();
-				return Constant.SHUTDOWN;
-			} else {
+			if (quartzService.isInStandbyMode()) {
 				quartzService.startJobs();
 				return Constant.START;
+
+			} else {
+				quartzService.standByJobs();
+				return Constant.SHUTDOWN;
 			}
 		} catch (Exception e) {
 			return e.getMessage();
 		}
 	}
 
-	@RequestMapping(value = "isStart", produces = "text/html;charset=UTF-8")
-	public @ResponseBody String isStart() {
+	/**
+	 * 测试方法
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "start2", produces = "text/html;charset=UTF-8")
+	public @ResponseBody String start2() {
 		try {
-			return quartzService.isStarted() ? "true" : "false";
+			quartzService.startJobs();
+			return Constant.START;
+		} catch (Exception e) {
+			return e.getMessage();
+		}
+	}
+
+	@RequestMapping(value = "isInStandbyMode", produces = "text/html;charset=UTF-8")
+	public @ResponseBody String isInStandbyMode() {
+		try {
+			return quartzService.isInStandbyMode() ? "true" : "false";
 		} catch (Exception e) {
 			return e.getMessage();
 		}
