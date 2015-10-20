@@ -20,6 +20,16 @@ public class ScheduleJob {
 	/* 任务描述 */
 	private String desc;
 
+	private String log;
+
+	public String getLog() {
+		return log;
+	}
+
+	public void setLog(String log) {
+		this.log = log;
+	}
+
 	public ScheduleJob() {
 		jobGroup = Constant.JOB_GROUP_NAME;
 	}
