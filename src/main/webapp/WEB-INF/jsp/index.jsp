@@ -166,15 +166,39 @@
 	}
 	
 	function log(btn,name,group){
+		$("#logContent").html("");
 		var button = $(btn);
 		button.addClass("disabled");
-		$("#logContent").html('这是一条测试日志');
-		button.removeClass("disabled");
-		$("#logModal").modal('show');
+		$.post("getLogs.php",{name:name,group:group},function(msg){
+			if(null == msg || msg == ''){
+				button.removeClass("disabled");
+				alert("暂无日志");
+				return;
+			}
+			var array = jQuery.parseJSON(msg);
+			var $table = $("<table>");
+			$table.addClass("table");
+			for(var i = 0 ; i < array.length ; i++){
+				var $tr = $("<tr>");
+				$tr.append("<td>"+array[i].time+"</td>");
+				$tr.append("<td>"+array[i].result+"</td>");
+				$table.append($tr);
+			}
+			$("#logContent").append($table);
+			button.removeClass("disabled");
+			$("#logModal").modal('show');
+		});
 	}
 	
-	function modify(name,group,cronExpress,url){
+	function modify(name,group,cronExpress,url,method,params){
 		var editModal = $("#editModal");
+		if(method == "GET"){
+			editModal.find("select[name='method']").val("GET");
+			editModal.find("textarea[name='params']").hide();
+		}else if(method == "POST"){
+			editModal.find("select[name='method']").val("POST");
+			editModal.find("textarea[name='params']").show();
+		}
 		if(cronExpress == "")
 			editModal.find("input[name='time']").val("");
 		else
@@ -184,9 +208,20 @@
 		else
 			editModal.find("input[name='url']").val(url);
 		
+		if(params == null || params == "")
+			editModal.find("textarea[name='params']").val("");
+		else
+			editModal.find("textarea[name='params']").val(params);
+		
 		editModal.find("input[name='name']").val(name);
 		editModal.find("input[name='group']").val(group);
 		editModal.modal({show:true,backdrop:false});
+		editModal.find("select[name='method']").change(function(){
+			if(this.value == 'GET'){
+				$("#editModal textarea[name='params']").hide();
+			}else if(this.value == 'POST')
+				$("#editModal textarea[name='params']").show();
+		});
 	}
 	function submitEdit(){
 		var editModal = $("#editModal");
@@ -276,8 +311,10 @@
 									    					</c:otherwise>
 								    					</c:choose>
 														<button id="delete" type="button" class="btn btn-default chinese" onclick="del(this,'${map.jobName}','${map.jobGroup}')">删除</button>
-														<button id="modify" type="button" class="btn btn-default chinese" onclick="modify('${map.jobName}','${map.jobGroup}','${map.cronExpression}','${map.url }')">修改</button>
-														<button id="run" type="button" class="btn btn-default chinese" onclick="run(this,'${map.jobName}','${map.jobGroup}')">立即运行一次</button>
+														<button id="modify" type="button" class="btn btn-default chinese" onclick="modify('${map.jobName}','${map.jobGroup}','${map.cronExpression}','${map.url }','${map.method}','${fn:escapeXml(map.params)}')">修改</button>
+														<c:if test="${map.jobStatus == 'NORMAL'}">
+															<button id="run" type="button" class="btn btn-default chinese" onclick="run(this,'${map.jobName}','${map.jobGroup}')">立即运行一次</button>
+														</c:if>
 														<button id="log" type="button" class="btn btn-default chinese" onclick="log(this,'${map.jobName}','${map.jobGroup}')">查看日志</button>
 													</div>
 								    			</td>
