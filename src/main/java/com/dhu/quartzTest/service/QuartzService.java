@@ -67,6 +67,10 @@ public class QuartzService {
 				job.setDesc("触发器:" + trigger.getKey());
 				job.setUrl(scheduler.getJobDetail(jobKey).getJobDataMap()
 						.getString("url"));
+				job.setMethod(scheduler.getJobDetail(jobKey).getJobDataMap()
+						.getString("method"));
+				job.setParams(scheduler.getJobDetail(jobKey).getJobDataMap()
+						.getString("params"));
 				Trigger.TriggerState triggerState = scheduler
 						.getTriggerState(trigger.getKey());
 				job.setJobStatus(triggerState.name());
@@ -121,6 +125,23 @@ public class QuartzService {
 		Scheduler scheduler = this.scheduler;
 		return scheduler.getJobDetail(JobKey.jobKey(jobName, jobGroupName))
 				.getJobDataMap();
+	}
+
+	/**
+	 * 获取一个任务的log
+	 * 
+	 * @param jobName
+	 * @param jobGroupName
+	 * @return
+	 * @throws SchedulerException
+	 */
+	public String getLogs(String jobName, String jobGroupName)
+			throws SchedulerException {
+		Scheduler scheduler = this.scheduler;
+		String str = scheduler
+				.getJobDetail(JobKey.jobKey(jobName, jobGroupName))
+				.getJobDataMap().getString("log");
+		return str;
 	}
 
 	/**
@@ -259,7 +280,7 @@ public class QuartzService {
 	public void startJobNow(String jobName, String jobGroupName, JobDataMap data)
 			throws SchedulerException {
 		Scheduler sched = this.scheduler;
-		if (sched.isShutdown() || sched.isInStandbyMode())
+		if (sched.isInStandbyMode())
 			sched.start();
 		sched.triggerJob(JobKey.jobKey(jobName, jobGroupName), data);
 	}
