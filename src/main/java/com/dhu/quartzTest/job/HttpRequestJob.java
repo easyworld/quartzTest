@@ -9,14 +9,21 @@ import java.net.URLConnection;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.quartz.PersistJobDataAfterExecution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dhu.quartzTest.util.Constant;
+import com.dhu.quartzTest.util.DateUtil;
 import com.dhu.quartzTest.util.JSONUtil;
 
+@PersistJobDataAfterExecution
 public class HttpRequestJob implements Job {
 
 	private static Logger _log = LoggerFactory.getLogger(HttpRequestJob.class);
@@ -24,13 +31,36 @@ public class HttpRequestJob implements Job {
 	@Override
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		String url = arg0.getMergedJobDataMap().getString("url");
-		String param = arg0.getMergedJobDataMap().getString("param");
-		param = JSONUtil.myJson2ParamString(param);
+		String param = arg0.getMergedJobDataMap().getString("params");
+		String log = arg0.getMergedJobDataMap().getString("log");
+
+		JSONArray json_array;
+		if (log == null || log.isEmpty()) {
+			json_array = new JSONArray();
+		} else {
+			json_array = JSONArray.fromObject(log);
+		}
+
+		String result = null;
+		if (param != null)
+			param = JSONUtil.myJson2ParamString(param).replace("\"", "")
+					.replace("\'", "");
 		String method = arg0.getMergedJobDataMap().getString("method");
+
 		if ("get".equalsIgnoreCase(method))
-			_log.info(sendGet(url, null));
+			result = sendGet(url, null);
 		else if ("post".equalsIgnoreCase(method))
-			_log.info(sendPost(url, param));
+			result = sendPost(url, param);
+
+		JSONObject json_obj = new JSONObject();
+		json_obj.put("time", DateUtil.getMyDate());
+		json_obj.put("result", result);
+		if (json_array.size() > Constant.NUMBER_OF_LOGS) {
+			json_array.remove(0);
+		}
+		json_array.add(json_obj);
+		arg0.getTrigger().getJobDataMap().put("log", json_array.toString());
+		arg0.getJobDetail().getJobDataMap().put("log", json_array.toString());
 	}
 
 	/**
@@ -59,12 +89,7 @@ public class HttpRequestJob implements Job {
 					"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
 			// 建立实际的连接
 			connection.connect();
-			// 获取所有响应头字段
-			Map<String, List<String>> map = connection.getHeaderFields();
-			// 遍历所有的响应头字段
-			for (String key : map.keySet()) {
-				System.out.println(key + "--->" + map.get(key));
-			}
+
 			// 定义 BufferedReader输入流来读取URL的响应
 			in = new BufferedReader(new InputStreamReader(
 					connection.getInputStream()));
@@ -73,8 +98,7 @@ public class HttpRequestJob implements Job {
 				result += line;
 			}
 		} catch (Exception e) {
-			System.out.println("发送GET请求出现异常！" + e);
-			e.printStackTrace();
+			_log.error("发送GET请求出现异常！" + e.getMessage());
 		}
 		// 使用finally块来关闭输入流
 		finally {
@@ -146,10 +170,5 @@ public class HttpRequestJob implements Job {
 			}
 		}
 		return result;
-	}
-
-	public static void main(String[] args) {
-		HttpRequestJob j = new HttpRequestJob();
-		System.out.println(j.sendPost("www.baidu.com", null));
 	}
 }
