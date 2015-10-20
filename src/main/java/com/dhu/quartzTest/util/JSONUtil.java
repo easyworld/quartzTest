@@ -16,6 +16,8 @@ public class JSONUtil {
 		StringBuffer sb = new StringBuffer();
 		for (int i = 0; i < json.size(); i++) {
 			temp = JSONArray.fromObject(json.get(i));
+			if (temp == null || temp.size() < 2)
+				continue;
 			sb.append(temp.get(0) + "=" + temp.get(1));
 			if (i != json.size() - 1)
 				sb.append("&");
