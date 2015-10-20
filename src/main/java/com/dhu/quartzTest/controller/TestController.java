@@ -1,6 +1,9 @@
 package com.dhu.quartzTest.controller;
 
 import java.util.List;
+import java.util.Map.Entry;
+
+import javax.servlet.http.HttpServletRequest;
 
 import net.sf.json.JSONArray;
 
@@ -86,6 +89,25 @@ public class TestController {
 		try {
 			List<?> list = quartzService.getRunningJobList();
 			String json = JSONArray.fromObject(list).toString();
+			return json;
+		} catch (SchedulerException e) {
+			return "";
+		}
+	}
+
+	/**
+	 * 获取任务日志
+	 * 
+	 * @param name
+	 * @param group
+	 * @return
+	 */
+	@RequestMapping(value = "getLogs", produces = "text/html;charset=UTF-8")
+	public @ResponseBody String getLogs(String name, String group) {
+		if (name == null || group == null)
+			return "";
+		try {
+			String json = quartzService.getLogs(name, group);
 			return json;
 		} catch (SchedulerException e) {
 			return "";
@@ -237,14 +259,21 @@ public class TestController {
 	 * @return
 	 */
 	@RequestMapping("/test")
-	public @ResponseBody String test(String param) {
-		_log.info("Calling test start");
+	public @ResponseBody String test(HttpServletRequest request) {
+		StringBuffer sb = new StringBuffer();
+		sb.append("method is " + request.getMethod() + "; params:");
+		for (Object o : request.getParameterMap().entrySet()) {
+			Entry e = (Entry) o;
+			sb.append((String) e.getKey() + " = "
+					+ ((String[]) (e.getValue()))[0] + ";");
+		}
+
 		try {
 			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		_log.info("Calling test success");
+		_log.info(sb.toString());
 		return Constant.SUCCESS;
 	}
 }
