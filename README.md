@@ -1,4 +1,4 @@
-一个基于quartZ的web url定时调度器
+一个基于quartz的web url定时调度器
 =================
 
 功能
@@ -15,3 +15,13 @@
 1. 不支持https
 2. 主页面需要使用ajax定时刷新
 3. 有待排除一些异常bug
+
+涉及技术框架
+-------------------
+
+* jQuery 
+* bootstrap
+* JSP
+* SpringMVC
+* quartz
+* maven
