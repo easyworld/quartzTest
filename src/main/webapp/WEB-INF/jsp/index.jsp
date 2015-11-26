@@ -33,7 +33,7 @@
 		//添加按钮
 		$("#addTask").click(function(){
 			//开始添加前的准备工作
-			$("#reuqestParams").empty();
+			$("#requestParams").empty();
 			$("#params").val("");
 			$("#requestMethod").get(0).value = "GET";
 			$("#addJobModal").modal('show');
@@ -46,7 +46,7 @@
 		$("#submitAddTask").click(function(){
 			// 拼接字段
 			if($("#requestMethod").val() == 'POST'){
-				var $divs = $("#reuqestParams>div");
+				var $divs = $("#requestParams>div");
 				var array = new Array();
 				$divs.each(function(){
 					var key = $(this).find("input:eq(0)").val();
@@ -86,32 +86,36 @@
 		//get,post转化
 		$("#requestMethod").change(function(){
 			if(this.value=='GET'){
-				$("#reuqestParams").text("");
+				$("#requestParams").text("");
 			}
 			else if(this.value=='POST'){
-				var $params = $("#reuqestParams");
+				var $params = $("#requestParams");
 				$params.append(html);
 			}
 		});
 	});
 	function insertUrlParam(input){
-		var $params = $("#reuqestParams");
+		var $params = $("#requestParams");
 		$params.append(html);
 		$(input).parent().find("input").each(function(){
 			$(this).attr("onfocus","");
 		});
 	}
 	function delUrlParam(btn){
-		if($("#reuqestParams>.form-group").length <= 1){
+		if($("#requestParams>.form-group").length <= 1){
 			return;
 		}
 		$(btn).parent().remove();
-		var $params = $("#reuqestParams");
+		var $params = $("#requestParams");
+		$params.find("div:last>input").each(function(){
+			$(this).attr("onfocus","insertUrlParam(this)");
+		});
+		/*
 		$params.find("div:last>input").each(function(){
 			$(this).bind("onfocus",function(){
 				insertUrlParam(this);
 			});
-		});
+		});*/
 	}
 	function pause(btn,name,group){
 		var button = $(btn);
@@ -438,7 +442,7 @@
 					<select id="requestMethod" name="method" class="form-control" style="width: 18%;display: inline;"><option selected="selected">GET</option><option>POST</option></select>
 					</div>
 				</div>
-				<div id="reuqestParams" class="form-group"></div>
+				<div id="requestParams" class="form-group"></div>
 				<input id="params" type="hidden" name="params" />
 			</form>
 	      </div>
